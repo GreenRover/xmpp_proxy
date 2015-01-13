@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+X-COMMENT: xmpp reverse proxy
+Main-Class: ch.mst.xmpp_reverse_proxy
+Class-Path: lib/ini4j-0.5.2.jar lib/commons-cli-1.2.jar lib/agafua-syslog-0.2.jar ch/mst/*.class
