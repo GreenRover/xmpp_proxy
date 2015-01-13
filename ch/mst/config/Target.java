@@ -1,7 +1,7 @@
 /*
  * Single target item.
  */
-package Config;
+package ch.mst.config;
 
 /**
  *

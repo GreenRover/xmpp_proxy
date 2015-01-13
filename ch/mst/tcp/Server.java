@@ -1,7 +1,7 @@
 /*
  * Tcp server
  */
-package Tcp;
+package ch.mst.tcp;
 
 /**
  *
@@ -30,9 +30,9 @@ public class Server implements Runnable {
         }
         openServerSocket();
         while(! isStopped()){
-            Socket clientSocket = null;
+            Socket serverInstanceSocket = null;
             try {
-                clientSocket = this.serverSocket.accept();
+                serverInstanceSocket = this.serverSocket.accept();
             } catch (IOException e) {
                 if(isStopped()) {
                     System.out.println("Server Stopped.") ;
@@ -41,9 +41,14 @@ public class Server implements Runnable {
                 throw new RuntimeException(
                     "Error accepting client connection", e);
             }
-            new Thread(
-                new Client(clientSocket)
-            ).start();
+            
+            try {
+                new Thread(
+                    new ServerInstance(serverInstanceSocket)
+                ).start();
+            } catch (IOException e) {
+                // Error while client handling.
+            }
         }
         System.out.println("Server Stopped.") ;
     }

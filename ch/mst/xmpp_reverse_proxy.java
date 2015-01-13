@@ -1,3 +1,5 @@
+package ch.mst;
+
 /*
  * xmpp reverse proxy class.
  */
@@ -16,6 +18,13 @@ import org.apache.commons.cli.PosixParser;
 
 import org.ini4j.Ini;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import com.agafua.syslog.SyslogHandler;
+
+import ch.mst.config.Target;
+import ch.mst.tcp.Server;
+
 
 /**
  *
@@ -24,9 +33,11 @@ import org.ini4j.Ini;
 public class xmpp_reverse_proxy {
     
     // The list of domains parsed form config.
-    protected static HashMap<String, Config.Target> domains;
+    protected static HashMap<String, Target> domains;
     protected static String config_file;
     protected static int port = 5222;
+    
+    public final static Logger LOGGER = Logger.getLogger("mst.xmpp");
 
     /**
      * @param args the command line arguments
@@ -54,7 +65,10 @@ public class xmpp_reverse_proxy {
             System.exit(0);
         }
         
-        Tcp.Server server = new Tcp.Server(port);
+        // Add syslog support to logger instance.
+        xmpp_reverse_proxy.LOGGER.addHandler(new SyslogHandler());
+        
+        Server server = new Server(port);
         new Thread(server).start();
     }
     
@@ -73,7 +87,7 @@ public class xmpp_reverse_proxy {
         for (String domain_name : domain_names) {
             String target_string = domains_section.fetch(domain_name);
             
-            Config.Target target_object = new Config.Target(
+            Target target_object = new Target(
                     target_string.toLowerCase(),
                     xmpp_reverse_proxy.port
                 );
@@ -82,7 +96,7 @@ public class xmpp_reverse_proxy {
             String[] target_parts = target_string.split(":");
             
             if (target_parts.length == 2) {
-                target_object = new Config.Target(
+                target_object = new Target(
                         target_parts[0].toLowerCase(),
                         Integer.parseInt(target_parts[1]) 
                     );
@@ -140,7 +154,7 @@ public class xmpp_reverse_proxy {
      * @param domain
      * @return 
      */
-    public static Config.Target resolveDomain(String domain) {
+    public static Target resolveDomain(String domain) {
         return xmpp_reverse_proxy.domains.get(domain);
     }
     
