@@ -35,4 +35,9 @@ public class Target {
         
         return this;
     }
+    
+    @Override
+    public String toString() {
+        return this.getHost() + ':' + Integer.toString(this.getPort());
+    }
 }

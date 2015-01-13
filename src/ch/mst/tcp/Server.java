@@ -8,9 +8,11 @@ package ch.mst.tcp;
  * @author hhenning
  */
 
+import ch.mst.xmpp_reverse_proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class Server implements Runnable {
 
@@ -28,6 +30,7 @@ public class Server implements Runnable {
         synchronized(this){
             this.runningThread = Thread.currentThread();
         }
+        
         openServerSocket();
         while(! isStopped()){
             Socket serverInstanceSocket = null;
@@ -71,8 +74,10 @@ public class Server implements Runnable {
         try {
             this.serverSocket = new ServerSocket(this.serverPort);
         } catch (IOException e) {
-            throw new RuntimeException("Cannot open port 8080", e);
+            throw new RuntimeException("Cannot open port " + this.serverPort, e);
         }
+        
+        xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Start listening on port: {0}", Integer.toString(this.serverPort)); 
     }
 
 }

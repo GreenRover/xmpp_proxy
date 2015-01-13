@@ -24,6 +24,7 @@ import com.agafua.syslog.SyslogHandler;
 
 import ch.mst.config.Target;
 import ch.mst.tcp.Server;
+import java.util.Map;
 
 
 /**
@@ -33,9 +34,10 @@ import ch.mst.tcp.Server;
 public class xmpp_reverse_proxy {
     
     // The list of domains parsed form config.
-    protected static HashMap<String, Target> domains;
+    protected static HashMap<String, Target> domains = new HashMap<String, Target>();
     protected static String config_file;
     protected static int port = 5222;
+    protected static int ssl_port;
     
     public final static Logger LOGGER = Logger.getLogger("mst.xmpp");
 
@@ -48,8 +50,11 @@ public class xmpp_reverse_proxy {
             // parse the command line arguments
             CommandLine cli = getCliArgs(args);
             
-            port = Integer.parseInt(cli.getOptionValue("port"));
-            config_file = cli.getOptionValue("config");
+            xmpp_reverse_proxy.port = Integer.parseInt(cli.getOptionValue("port"));
+            if (cli.hasOption("ssl_port")) {
+                xmpp_reverse_proxy.ssl_port = Integer.parseInt(cli.getOptionValue("ssl_port"));
+            }
+            xmpp_reverse_proxy.config_file = cli.getOptionValue("config");
         }
         catch(ParseException exp) {
             // oops, something went wrong
@@ -61,7 +66,7 @@ public class xmpp_reverse_proxy {
             parseConfig();
         } catch (Exception exp) {
             // oops, something went wrong
-            System.err.println("Unable to parse config: " + exp.getMessage());
+            System.err.println("Unable to parse config: " + exp);
             System.exit(0);
         }
         
@@ -78,14 +83,16 @@ public class xmpp_reverse_proxy {
      * @throws IOException 
      */
     protected static void parseConfig() throws IOException {
-        Ini ini = new Ini(new File(config_file));
+        Ini ini = new Ini(new File(xmpp_reverse_proxy.config_file));
         Ini.Section domains_section = ini.get("domains");
         
+        
+
         xmpp_reverse_proxy.domains.clear();
         
-        String[] domain_names = domains_section.childrenNames();
-        for (String domain_name : domain_names) {
-            String target_string = domains_section.fetch(domain_name);
+        for (Map.Entry<String, String> entry : domains_section.entrySet()) {
+            String domain_name= entry.getKey().toLowerCase();
+            String target_string = entry.getValue();
             
             Target target_object = new Target(
                     target_string.toLowerCase(),
@@ -104,9 +111,11 @@ public class xmpp_reverse_proxy {
             
             // Add traget to hashmap.
             xmpp_reverse_proxy.domains.put(
-                target_object.getHost(),
+                domain_name,
                 target_object    
             );
+            
+            xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Add target: " + domain_name + " = " + target_object);
         }
 
     }
@@ -116,7 +125,6 @@ public class xmpp_reverse_proxy {
      * 
      * @param args
      * @return
-     * @throws ParseException 
      */
     protected static CommandLine getCliArgs(String[] args) throws ParseException {
         
@@ -125,6 +133,11 @@ public class xmpp_reverse_proxy {
                                 .withDescription("The port to listen on")
                                 .isRequired()
                                 .create("port");
+        
+        Option ssl_port_option = OptionBuilder.withArgName("ssl_port")
+                                .hasArg()
+                                .withDescription("The ssl port to listen on")
+                                .create("ssl_port");
         
         Option config_file_option = OptionBuilder.withArgName("config")
                                 .hasArg()
@@ -136,6 +149,7 @@ public class xmpp_reverse_proxy {
         Options options = new Options();
 
         options.addOption(port_option);
+        options.addOption(ssl_port_option);
         options.addOption(config_file_option);
         
         

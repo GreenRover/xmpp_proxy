@@ -2,4 +2,5 @@
 
 ant compile
 ant jar
-ant run
+
+java -jar build/jar/xmpp-proxy.jar --port=1234 --config=config.ini
