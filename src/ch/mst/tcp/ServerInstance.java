@@ -43,9 +43,9 @@ public class ServerInstance implements Runnable {
     
     /**
      * The buffer where the domain check bytes are written.
-     * Because 130 is the solution of all problems.
+     * Because 130 is the solution of all problems. But tobe save the max buffer is 10 time this large.
      */
-    private byte[] check_buffer = new byte[130];
+    private byte[] check_buffer = new byte[1300];
     
     
     /**
@@ -64,11 +64,10 @@ public class ServerInstance implements Runnable {
             if (!this.detectTargetSystem()) {
                 // Failed to detect and connect to target system.
 
-                this.serverInStream.close();
-                this.serverOutStream.close();
-                
-                this.targetInStream.close();
-                this.targetOutStream.close();
+                try { serverInStream.close();      } catch (Exception e) { /* ignore */ }
+                try { serverOutStream.close();     } catch (Exception e) { /* ignore */ }
+                try { targetInStream.close();      } catch (Exception e) { /* ignore */ }
+                try { targetOutStream.close();     } catch (Exception e) { /* ignore */ }
 
                 return;
             }
@@ -77,24 +76,26 @@ public class ServerInstance implements Runnable {
             new Thread( new CopyStream(serverInStream, targetOutStream) {
                 @Override
                 public void onError(IOException ex) {
-                    try { serverInStream.close();      } catch (IOException e) { /* ignore */ }
-                    try { serverOutStream.close();     } catch (IOException e) { /* ignore */ }
-                    try { targetInStream.close();      } catch (IOException e) { /* ignore */ }
-                    try { targetOutStream.close();     } catch (IOException e) { /* ignore */ }
+                    try { serverInStream.close();      } catch (Exception e) { /* ignore */ }
+                    try { serverOutStream.close();     } catch (Exception e) { /* ignore */ }
+                    try { targetInStream.close();      } catch (Exception e) { /* ignore */ }
+                    try { targetOutStream.close();     } catch (Exception e) { /* ignore */ }
                 }
             }).start();
 
             new Thread( new CopyStream(targetInStream, serverOutStream) {
                 @Override
                 public void onError(IOException ex) {
-                    try { serverInStream.close();      } catch (IOException e) { /* ignore */ }
-                    try { serverOutStream.close();     } catch (IOException e) { /* ignore */ }
-                    try { targetInStream.close();      } catch (IOException e) { /* ignore */ }
-                    try { targetOutStream.close();     } catch (IOException e) { /* ignore */ }
+                    try { serverInStream.close();      } catch (Exception e) { /* ignore */ }
+                    try { serverOutStream.close();     } catch (Exception e) { /* ignore */ }
+                    try { targetInStream.close();      } catch (Exception e) { /* ignore */ }
+                    try { targetOutStream.close();     } catch (Exception e) { /* ignore */ }
                 }
             }).start();
             
-        } catch (IOException ex) {}
+        } catch (Exception ex) {
+            xmpp_reverse_proxy.LOGGER.log(Level.WARNING, ex.toString());
+        }
 
     }
     
@@ -105,20 +106,30 @@ public class ServerInstance implements Runnable {
      * @return 
      */
     protected boolean detectTargetSystem() {
+        
         try {
             // Read some bytes.
-            this.serverInStream.read(check_buffer, 0, check_buffer.length);
-
+            int buffer_size = 130;
+            int bytes_readet = 0;
+            long start_time = System.currentTimeMillis();
+            
+            // Read as long we not got min buffer_size or max 30sec.
+            while (bytes_readet < (buffer_size -1) && (System.currentTimeMillis() - start_time) < (30 * 1000)) {
+                byte[] buffer = new byte[buffer_size];
+                bytes_readet += this.serverInStream.read(buffer, 0, buffer_size);       
+                System.arraycopy(buffer, 0, this.check_buffer, bytes_readet, buffer.length);
+            }
+            
             // Get the string back from the read bytes.
-            String str = new String(check_buffer, "UTF-8");
+            String str = new String(this.check_buffer, "UTF-8");
             
             // Patttern expect to find.
-            Pattern pattern = Pattern.compile("\\<stream:stream[^>]*to=[\\\"']?([\\w\\-]+)[\\\"']?");
+            Pattern pattern = Pattern.compile("\\<stream:stream[^>]*to=[\\\"']?([\\w\\-\\.]+)[\\\"']?");
             
             //  Look up buffer by regex.
             Matcher match = pattern.matcher(str);
             
-            if(match.matches()) {
+            if(match.find()) {
                 // Buffer match regex.
                 String to = match.group(1);
                 
@@ -144,8 +155,10 @@ public class ServerInstance implements Runnable {
                     return false;
                 }
                 
+                xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Forward session for {0} to {1}", new Object[]{to, this.target});
+                
             } else {
-                returnXmppError("xmpp-proxy", "Didt not received any headers.");
+                returnXmppError("xmpp-proxy", "Didt not received any matching headers.");
                 return false;
             }
         } catch (IOException ex) {
@@ -154,7 +167,7 @@ public class ServerInstance implements Runnable {
                 return false;
             }
         }
-
+ 
         return true;
     }
     

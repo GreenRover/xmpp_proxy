@@ -24,6 +24,7 @@ import com.agafua.syslog.SyslogHandler;
 
 import ch.mst.config.Target;
 import ch.mst.tcp.Server;
+import ch.mst.tcp.SslServer;
 import java.util.Map;
 
 
@@ -37,7 +38,8 @@ public class xmpp_reverse_proxy {
     protected static HashMap<String, Target> domains = new HashMap<String, Target>();
     protected static String config_file;
     protected static int port = 5222;
-    protected static int ssl_port;
+    protected static int ssl_port = 0;
+    protected static String ssl_cert = "";
     
     public final static Logger LOGGER = Logger.getLogger("mst.xmpp");
 
@@ -54,6 +56,10 @@ public class xmpp_reverse_proxy {
             if (cli.hasOption("ssl_port")) {
                 xmpp_reverse_proxy.ssl_port = Integer.parseInt(cli.getOptionValue("ssl_port"));
             }
+            if (cli.hasOption("ssl_cert")) {
+                xmpp_reverse_proxy.ssl_cert = cli.getOptionValue("ssl_cert");
+            }
+            
             xmpp_reverse_proxy.config_file = cli.getOptionValue("config");
         }
         catch(ParseException exp) {
@@ -73,8 +79,19 @@ public class xmpp_reverse_proxy {
         // Add syslog support to logger instance.
         xmpp_reverse_proxy.LOGGER.addHandler(new SyslogHandler());
         
-        Server server = new Server(port);
+        // Start tcp server.
+        Server server = new Server(xmpp_reverse_proxy.port);
         new Thread(server).start();
+        
+        // Start ssl server if configured.
+        if (!xmpp_reverse_proxy.ssl_cert.isEmpty() && xmpp_reverse_proxy.ssl_port > 0) {
+            try {
+                Server ssl_server = new SslServer(xmpp_reverse_proxy.ssl_port, xmpp_reverse_proxy.ssl_cert);
+                new Thread(ssl_server).start();
+            } catch (IOException ex) {
+                System.err.println("Unable to start ssl server.  Reason: " + ex.getMessage());
+            } 
+        }
     }
     
     /**
@@ -139,6 +156,11 @@ public class xmpp_reverse_proxy {
                                 .withDescription("The ssl port to listen on")
                                 .create("ssl_port");
         
+        Option ssl_cert_option = OptionBuilder.withArgName("ssl_cert")
+                                .hasArg()
+                                .withDescription("Path to pem file")
+                                .create("ssl_cert");
+        
         Option config_file_option = OptionBuilder.withArgName("config")
                                 .hasArg()
                                 .withDescription("Configuration file")
@@ -150,6 +172,7 @@ public class xmpp_reverse_proxy {
 
         options.addOption(port_option);
         options.addOption(ssl_port_option);
+        options.addOption(ssl_cert_option);
         options.addOption(config_file_option);
         
         

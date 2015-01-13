@@ -5,7 +5,7 @@ package ch.mst.tcp;
 
 /**
  *
- * @author hhenning
+ * @author henning@mst.ch Heiko Henning
  */
 
 import ch.mst.xmpp_reverse_proxy;
