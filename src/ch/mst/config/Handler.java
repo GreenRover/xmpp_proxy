@@ -77,7 +77,7 @@ public class Handler {
                 target_object    
             );
             
-            xmpp_reverse_proxy.log(Level.INFO, "Add target: " + domain_name + " = " + target_object);
+            xmpp_reverse_proxy.log(Level.INFO, "Add target " + domain_name + " = " + target_object);
         }
         
         this.last_modified = this.config_file.lastModified();

@@ -4,10 +4,7 @@ package ch.mst;
  * xmpp reverse proxy class.
  */
 
-import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.OptionBuilder;
@@ -19,10 +16,9 @@ import org.apache.commons.cli.PosixParser;
 import org.productivity.java.syslog4j.Syslog;
 import org.productivity.java.syslog4j.SyslogIF;
 
-import ch.mst.config.Target;
 import ch.mst.tcp.Server;
 import ch.mst.tcp.SslServer;
-import java.util.Map;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import src.ch.mst.config.Handler;
@@ -50,6 +46,9 @@ public class xmpp_reverse_proxy {
      */
     public static void main(String[] args) {
 
+        SYSLOG_LOGGER.getConfig().setIdent("xmppProxy");
+        SYSLOG_LOGGER.getConfig().setFacility("LOCAL6");
+        
         try {
             // parse the command line arguments
             CommandLine cli = getCliArgs(args);
@@ -83,10 +82,7 @@ public class xmpp_reverse_proxy {
             System.err.println("Unable to parse config: " + exp);
             System.exit(0);
         }
-        
-        SYSLOG_LOGGER.getConfig().setIdent("xmpp proxy");
-        SYSLOG_LOGGER.getConfig().setFacility("LOCAL6");
-        
+                
         // Start tcp server.
         Server server = new Server(xmpp_reverse_proxy.port);
         new Thread(server).start();
