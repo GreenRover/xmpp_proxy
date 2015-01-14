@@ -18,14 +18,17 @@ import org.apache.commons.cli.PosixParser;
 
 import org.ini4j.Ini;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import com.agafua.syslog.SyslogHandler;
+import org.productivity.java.syslog4j.Syslog;
+import org.productivity.java.syslog4j.SyslogIF;
 
 import ch.mst.config.Target;
 import ch.mst.tcp.Server;
 import ch.mst.tcp.SslServer;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+;
 
 
 /**
@@ -41,7 +44,8 @@ public class xmpp_reverse_proxy {
     protected static int ssl_port = 0;
     protected static String ssl_cert = "";
     
-    public final static Logger LOGGER = Logger.getLogger("mst.xmpp");
+    public final static Logger CONSOLE_LOGGER = Logger.getLogger("mst.xmpp");
+    public final static SyslogIF SYSLOG_LOGGER = Syslog.getInstance("udp");
 
     /**
      * @param args the command line arguments
@@ -76,8 +80,8 @@ public class xmpp_reverse_proxy {
             System.exit(0);
         }
         
-        // Add syslog support to logger instance.
-        xmpp_reverse_proxy.LOGGER.addHandler(new SyslogHandler());
+        SYSLOG_LOGGER.getConfig().setIdent("xmpp proxy");
+        SYSLOG_LOGGER.getConfig().setFacility("LOCAL6");
         
         // Start tcp server.
         Server server = new Server(xmpp_reverse_proxy.port);
@@ -132,7 +136,7 @@ public class xmpp_reverse_proxy {
                 target_object    
             );
             
-            xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Add target: " + domain_name + " = " + target_object);
+            xmpp_reverse_proxy.log(Level.INFO, "Add target: " + domain_name + " = " + target_object);
         }
 
     }
@@ -193,6 +197,24 @@ public class xmpp_reverse_proxy {
      */
     public static Target resolveDomain(String domain) {
         return xmpp_reverse_proxy.domains.get(domain);
+    }
+    
+    /**
+     * Log message to console and syslog.
+     * 
+     * @param level
+     * @param message 
+     */
+    public static void log(Level level, String message) {
+        xmpp_reverse_proxy.CONSOLE_LOGGER.log(level, message);
+        
+        if (level == Level.SEVERE) {
+            xmpp_reverse_proxy.SYSLOG_LOGGER.critical(message);
+        } else if (level == Level.WARNING) {
+            xmpp_reverse_proxy.SYSLOG_LOGGER.warn(message);
+        } else {
+            xmpp_reverse_proxy.SYSLOG_LOGGER.info(message);
+        }
     }
     
 }

@@ -1,0 +1,10 @@
+<ivy-module version="2.0">
+    <info organisation="ch.mst" module="xmpp-proxy"/>
+
+    <dependencies>
+      <dependency org="commons-cli" name="commons-cli" rev="1.2"/>
+      <dependency org="org.syslog4j" name="syslog4j" rev="0.9.30"/>
+      <dependency org="org.ini4j" name="ini4j" rev="0.5.2"/>
+    </dependencies>
+
+</ivy-module>

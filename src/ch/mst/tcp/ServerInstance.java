@@ -94,7 +94,7 @@ public class ServerInstance implements Runnable {
             }).start();
             
         } catch (Exception ex) {
-            xmpp_reverse_proxy.LOGGER.log(Level.WARNING, ex.toString());
+            xmpp_reverse_proxy.log(Level.WARNING, ex.toString());
         }
 
     }
@@ -155,7 +155,7 @@ public class ServerInstance implements Runnable {
                     return false;
                 }
                 
-                xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Forward session for {0} to {1}", new Object[]{to, this.target});
+                xmpp_reverse_proxy.log(Level.INFO, "Forward session for " + to + " to " + this.target);
                 
             } else {
                 returnXmppError("xmpp-proxy", "Didt not received any matching headers.");
@@ -179,7 +179,7 @@ public class ServerInstance implements Runnable {
      */
     protected void returnXmppError(String from, String message) {
         
-        xmpp_reverse_proxy.LOGGER.log(Level.WARNING, message);
+        xmpp_reverse_proxy.log(Level.WARNING, message);
         
         String response = "<?xml version=\"1.0\"?>" + 
                 "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams\" id=\"1337\" from=\"" + from + "\" version=\"1.0\">" + 

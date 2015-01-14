@@ -77,7 +77,7 @@ public class Server implements Runnable {
             throw new RuntimeException("Cannot open port " + this.serverPort, e);
         }
         
-        xmpp_reverse_proxy.LOGGER.log(Level.INFO, "Start listening on port: {0}", Integer.toString(this.serverPort)); 
+        xmpp_reverse_proxy.log(Level.INFO, "Start listening on port: " + Integer.toString(this.serverPort)); 
     }
 
 }
