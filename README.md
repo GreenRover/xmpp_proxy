@@ -94,3 +94,8 @@ For this are commands `openssl` and `keytool` required.
 For windows users: They need to be within your $PATH variable.
 
 You need to restart the server if the pem file changed.
+
+## Licence
+
+GNU GPL
+
