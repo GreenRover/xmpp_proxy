@@ -17,6 +17,7 @@ import ch.mst.config.Target;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import src.ch.mst.config.Handler;
 
 /**
  * @author henning@mst.ch Heiko Henning
@@ -134,7 +135,7 @@ public class ServerInstance implements Runnable {
                 String to = match.group(1);
                 
                 // Resolve domain to taget host.
-                this.target = xmpp_reverse_proxy.resolveDomain(to);
+                this.target = Handler.resolveDomain(to);
                 
                 if (this.target == null) {
                     returnXmppError(to, "Unable to resolve domain for " + to);

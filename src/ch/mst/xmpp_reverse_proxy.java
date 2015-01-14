@@ -16,8 +16,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
-import org.ini4j.Ini;
-
 import org.productivity.java.syslog4j.Syslog;
 import org.productivity.java.syslog4j.SyslogIF;
 
@@ -27,6 +25,7 @@ import ch.mst.tcp.SslServer;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import src.ch.mst.config.Handler;
 
 ;
 
@@ -38,7 +37,6 @@ import java.util.logging.Logger;
 public class xmpp_reverse_proxy {
     
     // The list of domains parsed form config.
-    protected static HashMap<String, Target> domains = new HashMap<String, Target>();
     protected static String config_file;
     protected static int port = 5222;
     protected static int ssl_port = 0;
@@ -73,7 +71,13 @@ public class xmpp_reverse_proxy {
         }
         
         try {
-            parseConfig();
+            Handler config_handler = new Handler(
+                xmpp_reverse_proxy.config_file,
+                xmpp_reverse_proxy.port
+            );
+            config_handler.parseConfig();
+            config_handler.monitorConfig();
+
         } catch (Exception exp) {
             // oops, something went wrong
             System.err.println("Unable to parse config: " + exp);
@@ -104,40 +108,7 @@ public class xmpp_reverse_proxy {
      * @throws IOException 
      */
     protected static void parseConfig() throws IOException {
-        Ini ini = new Ini(new File(xmpp_reverse_proxy.config_file));
-        Ini.Section domains_section = ini.get("domains");
-        
-        
 
-        xmpp_reverse_proxy.domains.clear();
-        
-        for (Map.Entry<String, String> entry : domains_section.entrySet()) {
-            String domain_name= entry.getKey().toLowerCase();
-            String target_string = entry.getValue();
-            
-            Target target_object = new Target(
-                    target_string.toLowerCase(),
-                    xmpp_reverse_proxy.port
-                );
-            
-            // Test if port was given.
-            String[] target_parts = target_string.split(":");
-            
-            if (target_parts.length == 2) {
-                target_object = new Target(
-                        target_parts[0].toLowerCase(),
-                        Integer.parseInt(target_parts[1]) 
-                    );
-            }
-            
-            // Add traget to hashmap.
-            xmpp_reverse_proxy.domains.put(
-                domain_name,
-                target_object    
-            );
-            
-            xmpp_reverse_proxy.log(Level.INFO, "Add target: " + domain_name + " = " + target_object);
-        }
 
     }
     
@@ -189,15 +160,7 @@ public class xmpp_reverse_proxy {
         return cli;
     }
     
-    /**
-     * Get target by domain.
-     * 
-     * @param domain
-     * @return 
-     */
-    public static Target resolveDomain(String domain) {
-        return xmpp_reverse_proxy.domains.get(domain);
-    }
+
     
     /**
      * Log message to console and syslog.
